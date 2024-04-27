@@ -159,6 +159,7 @@ def misplaced_tile_heuristic(state):
 
 def manhattan_distance_heuristic(state):
     print("hello from manhattan_distance_heuristic!")
+    #lookup table?
     return
 
 
