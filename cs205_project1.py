@@ -1,9 +1,16 @@
+import copy
+
 class node:
     state = None
     g_n = None
     h_n = None
     f_n = None
 
+    def __init__(self):
+        self.g_n = 0
+        self.h_n = 0
+        self.f_n = 0
+    
     def goal_test(self):
         if self.state is None:
             print("something has gone terribly wrong")
@@ -82,21 +89,75 @@ def general_search(problem, queueing_function):
         #at this point i need to take node and expand it, aka find all ways 0 can move
 
         #todo: expand function? something like expand(node_queue, node)? would just add child notes to queue, up to queueing function to sort.
+        expand(node_queue, queueing_function, node)
         #todo: write queueing functions. 
         
         
 
     return
 
-def uniform_cost_search():
+#node_queue is an unsorted queue
+#node is the node dequeued from the node_queue, we want to expand this node
+
+#4 operators, up, down, left, right (-1 row, +1 row, -1 col, +1 col)
+def expand(node_queue, queueing_function, node):
+    blank_row = None
+    blank_col = None
+
+    test_row_col = None
+
+    new_node = None
+
+    temp = None
+
+    #find where the blank square '0' is
+    for i in range(3):
+        for j in range(3):
+            if (node.state[i][j] == 0): #found the blank square
+                blank_row = i
+                blank_col = j
+                break
+    
+    #can the blank square move left?
+    test_row_col = blank_col - 1
+    if (test_row_col >= 0 and test_row_col <= 2): #yes it can
+        #make a new node
+        new_node = copy.deepcopy(node) 
+        #swap the two indicies 
+        new_node.state[blank_row][blank_col], new_node.state[blank_row][test_row_col] = new_node.state[blank_row][test_row_col], new_node.state[blank_row][blank_col]
+        new_node.g_n += 1
+        #need to get its h_n, which depends on the queueing function
+        new_node.h_n = queueing_function(new_node.state)
+        node_queue.append(new_node)
+
+    
+
+        
+            
+
+    return
+
+#maybe these should just calculate the f_n value (g_n + h_n) 
+#uniform_cost_search: f_n = g_n + 0
+#for the other two h_n depends
+def uniform_cost_search(state):
     print("hello from uniform_cost_search!")
-    return
+    return 0
 
-def misplaced_tile_heuristic():
+def misplaced_tile_heuristic(state):
     print("hello from misplaced_tile_heuristic!")
-    return
+    correct_tile = 1
+    h_n = 0
 
-def manhattan_distance_heuristic():
+    for i in range(3):
+        for j in range(3):
+            if (state[i][j] != correct_tile and state[i][j] != 0):
+                h_n += 1
+            correct_tile += 1
+
+    return h_n
+
+def manhattan_distance_heuristic(state):
     print("hello from manhattan_distance_heuristic!")
     return
 
