@@ -68,22 +68,25 @@ def main():
     
     return
 
-#using python list as queue, append to add, pop to remove
+#using python list as queue, append to add to end of list, pop(0) to remove from beginning of list
 def general_search(problem, queueing_function):
+    iteration = 0
+
     # put 'problem' in a queue of nodes
     node_queue = []
     node_queue.append(problem)
 
-    #test "function pointer"
-    queueing_function()
-
     while(1):
+        print("Iteration", iteration, "of search")
         if (len(node_queue) == 0):
+            print("search failed!")
             return False
-        
-        node = node_queue.pop()
+
+        node = node_queue.pop(0)
 
         if (node.goal_test()):
+            print("search success!")
+            print("the solution depth is", node.g_n)
             return node
         
         #at this point i need to take node and expand it, aka find all ways 0 can move
@@ -91,9 +94,11 @@ def general_search(problem, queueing_function):
         #todo: expand function? something like expand(node_queue, node)? would just add child notes to queue, up to queueing function to sort.
         expand(node_queue, queueing_function, node)
         #todo: write queueing functions. 
-        
-        
 
+        # in-place sort from: https://stackoverflow.com/questions/403421/how-do-i-sort-a-list-of-objects-based-on-an-attribute-of-the-objects
+        node_queue.sort(key=lambda x: x.f_n, reverse=False)
+        iteration += 1
+        
     return
 
 #node_queue is an unsorted queue
@@ -128,12 +133,48 @@ def expand(node_queue, queueing_function, node):
         new_node.g_n += 1
         #need to get its h_n, which depends on the queueing function
         new_node.h_n = queueing_function(new_node.state)
+        new_node.f_n = new_node.g_n + new_node.h_n
         node_queue.append(new_node)
 
-    
+    #can the blank square move right?
+    test_row_col = blank_col + 1
+    if (test_row_col >= 0 and test_row_col <= 2): #yes it can
+        #make a new node
+        new_node = copy.deepcopy(node) 
+        #swap the two indicies 
+        new_node.state[blank_row][blank_col], new_node.state[blank_row][test_row_col] = new_node.state[blank_row][test_row_col], new_node.state[blank_row][blank_col]
+        new_node.g_n += 1
+        #need to get its h_n, which depends on the queueing function
+        new_node.h_n = queueing_function(new_node.state)
+        new_node.f_n = new_node.g_n + new_node.h_n
 
-        
-            
+        node_queue.append(new_node)
+
+    #can the blank square move up?
+    test_row_col = blank_row - 1
+    if (test_row_col >= 0 and test_row_col <= 2): #yes it can
+        #make a new node
+        new_node = copy.deepcopy(node) 
+        #swap the two indicies 
+        new_node.state[blank_row][blank_col], new_node.state[test_row_col][blank_col] = new_node.state[test_row_col][blank_col], new_node.state[blank_row][blank_col]
+        new_node.g_n += 1
+        #need to get its h_n, which depends on the queueing function
+        new_node.h_n = queueing_function(new_node.state)
+        new_node.f_n = new_node.g_n + new_node.h_n
+        node_queue.append(new_node)
+
+    #can the blank square move down?
+    test_row_col = blank_row + 1
+    if (test_row_col >= 0 and test_row_col <= 2): #yes it can
+        #make a new node
+        new_node = copy.deepcopy(node) 
+        #swap the two indicies 
+        new_node.state[blank_row][blank_col], new_node.state[test_row_col][blank_col] = new_node.state[test_row_col][blank_col], new_node.state[blank_row][blank_col]
+        new_node.g_n += 1
+        #need to get its h_n, which depends on the queueing function
+        new_node.h_n = queueing_function(new_node.state)
+        new_node.f_n = new_node.g_n + new_node.h_n
+        node_queue.append(new_node)
 
     return
 
@@ -141,11 +182,11 @@ def expand(node_queue, queueing_function, node):
 #uniform_cost_search: f_n = g_n + 0
 #for the other two h_n depends
 def uniform_cost_search(state):
-    print("hello from uniform_cost_search!")
+    #print("hello from uniform_cost_search!")
     return 0
 
 def misplaced_tile_heuristic(state):
-    print("hello from misplaced_tile_heuristic!")
+    #print("hello from misplaced_tile_heuristic!")
     correct_tile = 1
     h_n = 0
 
@@ -158,9 +199,25 @@ def misplaced_tile_heuristic(state):
     return h_n
 
 def manhattan_distance_heuristic(state):
-    print("hello from manhattan_distance_heuristic!")
+    #print("hello from manhattan_distance_heuristic!")
     #lookup table?
-    return
+    expected_row = None
+    expected_col = None
+
+    h_n = 0
+
+    # if tile is in correct spot, the manhattan distance will be calculated
+    # however, it will add 0 to h_n. only incorrect tiles will add meaningful 
+    # values to h_n
+    for row in range(3):
+        for col in range(3):
+            if (state[row][col] != 0):
+                expected_row = int((state[row][col] - 1) / 3)
+                expected_col = (state[row][col] - 1) % 3
+
+                h_n += abs(expected_col - col) + abs(expected_row - row)
+
+    return h_n
 
 
 if __name__ == "__main__":
