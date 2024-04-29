@@ -29,7 +29,7 @@ def main():
     puzzle_mode = int(raw_input)
     
     if (puzzle_mode == 1):
-        puzzle = [[1, 3, 6], [5, 0, 2], [4, 7, 8]]
+        puzzle = [[4, 1, 2], [5, 3, 0], [7, 8, 6]]
         problem.state = puzzle
     elif (puzzle_mode == 2):
         first_row = input("Enter the first row: ")
@@ -69,12 +69,20 @@ def main():
     return
 
 #using python list as queue, append to add to end of list, pop(0) to remove from beginning of list
+#todo: get the max queue size and the number of nodes expanded 
 def general_search(problem, queueing_function):
     iteration = 0
 
     # put 'problem' in a queue of nodes
     node_queue = []
     node_queue.append(problem)
+
+    max_node_queue_size = 0
+
+    seen_states = []
+    seen_states.append(problem.state)
+
+    expansions = 1
 
     while(1):
         print("Iteration", iteration, "of search")
@@ -83,20 +91,31 @@ def general_search(problem, queueing_function):
             return False
 
         node = node_queue.pop(0)
+        print("popped state with g(n) =", node.g_n, "and h(n) =", node.h_n)
+        print(node.state)
 
         if (node.goal_test()):
             print("search success!")
             print("the solution depth is", node.g_n)
+            print("the max queue size is", max_node_queue_size)
             return node
         
         #at this point i need to take node and expand it, aka find all ways 0 can move
 
         #todo: expand function? something like expand(node_queue, node)? would just add child notes to queue, up to queueing function to sort.
-        expand(node_queue, queueing_function, node)
+        expand(node_queue, queueing_function, node, seen_states)
         #todo: write queueing functions. 
 
         # in-place sort from: https://stackoverflow.com/questions/403421/how-do-i-sort-a-list-of-objects-based-on-an-attribute-of-the-objects
         node_queue.sort(key=lambda x: x.f_n, reverse=False)
+
+        print("printing node queue")
+        for node in node_queue:
+            print(node.state)
+
+        if (max_node_queue_size < len(node_queue)):
+            max_node_queue_size = len(node_queue)
+
         iteration += 1
         
     return
@@ -104,16 +123,39 @@ def general_search(problem, queueing_function):
 #node_queue is an unsorted queue
 #node is the node dequeued from the node_queue, we want to expand this node
 
+#problem: this function will do moves such that the parent state returns 
+"""
+Iteration 0 of search
+popped state with g(n) = 0 and h(n) 0
+[[4, 1, 2], [5, 3, 0], [7, 8, 6]]    
+printing node queue
+[[4, 1, 2], [5, 0, 3], [7, 8, 6]]    
+[[4, 1, 2], [5, 3, 6], [7, 8, 0]]    
+[[4, 1, 0], [5, 3, 2], [7, 8, 6]]    
+Iteration 1 of search
+popped state with g(n) = 1 and h(n) 6
+[[4, 1, 2], [5, 0, 3], [7, 8, 6]] parent   
+printing node queue
+[[4, 1, 2], [5, 3, 6], [7, 8, 0]]
+[[4, 1, 2], [0, 5, 3], [7, 8, 6]] child
+[[4, 1, 0], [5, 3, 2], [7, 8, 6]] 
+[[4, 1, 2], [5, 3, 0], [7, 8, 6]] shouldnt be here (child) (see line 124)
+[[4, 0, 2], [5, 1, 3], [7, 8, 6]] child
+[[4, 1, 2], [5, 8, 3], [7, 0, 6]] child
+"""
 #4 operators, up, down, left, right (-1 row, +1 row, -1 col, +1 col)
-def expand(node_queue, queueing_function, node):
+#returns the number of nodes expanded for a given node
+def expand(node_queue, queueing_function, node, seen_states):
     blank_row = None
     blank_col = None
 
     test_row_col = None
 
-    new_node = None
+    new_node = copy.deepcopy(node) 
 
     temp = None
+
+    expansions = 0
 
     #find where the blank square '0' is
     for i in range(3):
@@ -126,7 +168,6 @@ def expand(node_queue, queueing_function, node):
     #can the blank square move left?
     test_row_col = blank_col - 1
     if (test_row_col >= 0 and test_row_col <= 2): #yes it can
-        #make a new node
         new_node = copy.deepcopy(node) 
         #swap the two indicies 
         new_node.state[blank_row][blank_col], new_node.state[blank_row][test_row_col] = new_node.state[blank_row][test_row_col], new_node.state[blank_row][blank_col]
@@ -134,7 +175,14 @@ def expand(node_queue, queueing_function, node):
         #need to get its h_n, which depends on the queueing function
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
-        node_queue.append(new_node)
+
+        if (new_node.state not in seen_states):
+            node_queue.append(new_node)
+            seen_states.append(new_node.state)
+            expansions += 1
+        else:
+            print(new_node.state, "has been seen!")
+
 
     #can the blank square move right?
     test_row_col = blank_col + 1
@@ -148,7 +196,12 @@ def expand(node_queue, queueing_function, node):
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
 
-        node_queue.append(new_node)
+        if (new_node.state not in seen_states):
+            node_queue.append(new_node)
+            seen_states.append(new_node.state)
+            expansions += 1
+        else:
+            print(new_node.state, "has been seen!")
 
     #can the blank square move up?
     test_row_col = blank_row - 1
@@ -161,7 +214,13 @@ def expand(node_queue, queueing_function, node):
         #need to get its h_n, which depends on the queueing function
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
-        node_queue.append(new_node)
+
+        if (new_node.state not in seen_states):
+            node_queue.append(new_node)
+            seen_states.append(new_node.state)
+            expansions += 1
+        else:
+            print(new_node.state, "has been seen!")
 
     #can the blank square move down?
     test_row_col = blank_row + 1
@@ -174,7 +233,13 @@ def expand(node_queue, queueing_function, node):
         #need to get its h_n, which depends on the queueing function
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
-        node_queue.append(new_node)
+
+        if (new_node.state not in seen_states):
+            node_queue.append(new_node)
+            seen_states.append(new_node.state)
+            expansions += 1
+        else:
+            print(new_node.state, "has been seen!")
 
     return
 
