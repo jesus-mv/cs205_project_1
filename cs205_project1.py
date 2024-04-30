@@ -29,7 +29,7 @@ def main():
     puzzle_mode = int(raw_input)
     
     if (puzzle_mode == 1):
-        puzzle = [[4, 1, 2], [5, 3, 0], [7, 8, 6]]
+        puzzle = [[1, 6, 7], [5, 0, 3], [4, 8, 2]]
         problem.state = puzzle
     elif (puzzle_mode == 2):
         first_row = input("Enter the first row: ")
@@ -65,7 +65,7 @@ def main():
         return
     
     general_search(problem, queueing_function)
-    
+
     return
 
 #using python list as queue, append to add to end of list, pop(0) to remove from beginning of list
@@ -75,14 +75,14 @@ def general_search(problem, queueing_function):
 
     # put 'problem' in a queue of nodes
     node_queue = []
+    problem.h_n = queueing_function(problem.state)
+    problem.f_n = problem.g_n + problem.h_n
     node_queue.append(problem)
 
     max_node_queue_size = 0
 
     seen_states = []
     seen_states.append(problem.state)
-
-    expansions = 1
 
     while(1):
         print("Iteration", iteration, "of search")
@@ -99,20 +99,17 @@ def general_search(problem, queueing_function):
             print("the solution depth is", node.g_n)
             print("the max queue size is", max_node_queue_size)
             print("the number of nodes expanded is", iteration)
+            
             return node
         
-        #at this point i need to take node and expand it, aka find all ways 0 can move
-
-        #todo: expand function? something like expand(node_queue, node)? would just add child notes to queue, up to queueing function to sort.
         expand(node_queue, queueing_function, node, seen_states)
-        #todo: write queueing functions. 
 
         # in-place sort from: https://stackoverflow.com/questions/403421/how-do-i-sort-a-list-of-objects-based-on-an-attribute-of-the-objects
         node_queue.sort(key=lambda x: x.f_n, reverse=False)
 
-        print("printing node queue")
-        for node in node_queue:
-            print(node.state)
+        #print("printing node queue")
+        #for node in node_queue:
+        #    print(node.state)
 
         if (max_node_queue_size < len(node_queue)):
             max_node_queue_size = len(node_queue)
@@ -121,11 +118,7 @@ def general_search(problem, queueing_function):
         
     return
 
-#node_queue is an unsorted queue
-#node is the node dequeued from the node_queue, we want to expand this node
-
-#4 operators, up, down, left, right (-1 row, +1 row, -1 col, +1 col)
-
+# four operators, up, down, left, right (-1 row, +1 row, -1 col, +1 col)
 def expand(node_queue, queueing_function, node, seen_states):
     blank_row = None
     blank_col = None
@@ -134,117 +127,119 @@ def expand(node_queue, queueing_function, node, seen_states):
 
     new_node = None
 
-    #find where the blank square '0' is
+    #find the indices of the blank square '0'
     for i in range(3):
         for j in range(3):
-            if (node.state[i][j] == 0): #found the blank square
+            if (node.state[i][j] == 0):
                 blank_row = i
                 blank_col = j
                 break
     
-    #can the blank square move left?
+    # can the blank square move to the left?
     test_row_col = blank_col - 1
-    if (test_row_col >= 0 and test_row_col <= 2): #yes it can
+    if (test_row_col >= 0 and test_row_col <= 2): 
+        # create a new node to apply this operator to
         new_node = copy.deepcopy(node) 
-        #swap the two indicies 
+        # swap the the blank puzzle piece with the puzzle piece to the left of it (moves the blank square left)
         new_node.state[blank_row][blank_col], new_node.state[blank_row][test_row_col] = new_node.state[blank_row][test_row_col], new_node.state[blank_row][blank_col]
+
+        # get g(n), h(n), and f(n) values for the new node
         new_node.g_n += 1
-        #need to get its h_n, which depends on the queueing function
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
 
+        # ensure the new node has not been seen before
         if (new_node.state not in seen_states):
             node_queue.append(new_node)
             seen_states.append(new_node.state)
-        else:
-            print(new_node.state, "has been seen!")
 
-
-    #can the blank square move right?
+    # can the blank square move to the right?
     test_row_col = blank_col + 1
-    if (test_row_col >= 0 and test_row_col <= 2): #yes it can
-        #make a new node
+    if (test_row_col >= 0 and test_row_col <= 2): 
+        # create a new node to apply this operator to
         new_node = copy.deepcopy(node) 
-        #swap the two indicies 
+        # swap the the blank puzzle piece with the puzzle piece to the right of it (moves the blank square right)
         new_node.state[blank_row][blank_col], new_node.state[blank_row][test_row_col] = new_node.state[blank_row][test_row_col], new_node.state[blank_row][blank_col]
+
+        # get g(n), h(n), and f(n) values for the new node
         new_node.g_n += 1
-        #need to get its h_n, which depends on the queueing function
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
 
+        # ensure the new node has not been seen before
         if (new_node.state not in seen_states):
             node_queue.append(new_node)
             seen_states.append(new_node.state)
-        else:
-            print(new_node.state, "has been seen!")
 
-    #can the blank square move up?
+    # can the blank square move up?
     test_row_col = blank_row - 1
-    if (test_row_col >= 0 and test_row_col <= 2): #yes it can
-        #make a new node
+    if (test_row_col >= 0 and test_row_col <= 2): 
+        # create a new node to apply this operator to
         new_node = copy.deepcopy(node) 
-        #swap the two indicies 
+        # swap the the blank puzzle piece with the puzzle piece on top of it (moves the blank square up)
         new_node.state[blank_row][blank_col], new_node.state[test_row_col][blank_col] = new_node.state[test_row_col][blank_col], new_node.state[blank_row][blank_col]
+
+        # get g(n), h(n), and f(n) values for the new node
         new_node.g_n += 1
-        #need to get its h_n, which depends on the queueing function
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
 
+        # ensure the new node has not been seen before
         if (new_node.state not in seen_states):
             node_queue.append(new_node)
             seen_states.append(new_node.state)
-        else:
-            print(new_node.state, "has been seen!")
 
-    #can the blank square move down?
+    # can the blank square move down?
     test_row_col = blank_row + 1
-    if (test_row_col >= 0 and test_row_col <= 2): #yes it can
-        #make a new node
+    if (test_row_col >= 0 and test_row_col <= 2):
+         # create a new node to apply this operator to
         new_node = copy.deepcopy(node) 
-        #swap the two indicies 
+        # swap the the blank puzzle piece with the puzzle piece on below it (moves the blank square down)
         new_node.state[blank_row][blank_col], new_node.state[test_row_col][blank_col] = new_node.state[test_row_col][blank_col], new_node.state[blank_row][blank_col]
+
+        # get g(n), h(n), and f(n) values for the new node
         new_node.g_n += 1
-        #need to get its h_n, which depends on the queueing function
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
 
+        # ensure the new node has not been seen before
         if (new_node.state not in seen_states):
             node_queue.append(new_node)
             seen_states.append(new_node.state)
-        else:
-            print(new_node.state, "has been seen!")
 
     return
 
-#maybe these should just calculate the f_n value (g_n + h_n) 
-#uniform_cost_search: f_n = g_n + 0
-#for the other two h_n depends
+# returns the h(n) value for a particular node's state
+# uniform cost search has a h(n) of zero
 def uniform_cost_search(state):
-    #print("hello from uniform_cost_search!")
     return 0
 
+# returns the h(n) value for a particular node's state
+# using the misplaced tile heuristic
 def misplaced_tile_heuristic(state):
-    #print("hello from misplaced_tile_heuristic!")
-    correct_tile = 1
+
+    expected_tile = 1
+
     h_n = 0
 
     for i in range(3):
         for j in range(3):
-            if (state[i][j] != correct_tile and state[i][j] != 0):
+            if (state[i][j] != expected_tile and state[i][j] != 0):
                 h_n += 1
-            correct_tile += 1
+            expected_tile += 1
 
     return h_n
 
+# returns the h(n) value for a particular node's state
+# using the manhattan distance heuristic
 def manhattan_distance_heuristic(state):
-    #print("hello from manhattan_distance_heuristic!")
-    #lookup table?
+
     expected_row = None
     expected_col = None
 
     h_n = 0
 
-    # if tile is in correct spot, the manhattan distance will be calculated
+    # if tile is in correct spot, the manhattan distance will still be calculated
     # however, it will add 0 to h_n. only incorrect tiles will add meaningful 
     # values to h_n
     for row in range(3):
