@@ -6,10 +6,13 @@ class node:
     h_n = None
     f_n = None
 
+    parent = None
+
     def __init__(self):
         self.g_n = 0
         self.h_n = 0
         self.f_n = 0
+        self.parent = None
     
     def goal_test(self):
         if self.state is None:
@@ -99,6 +102,16 @@ def general_search(problem, queueing_function):
             print("the solution depth is", node.g_n)
             print("the max queue size is", max_node_queue_size)
             print("the number of nodes expanded is", iteration)
+
+            curr_node = node
+            path = []
+            while curr_node is not None:
+                path.append(curr_node)
+                curr_node = curr_node.parent
+            path.reverse()
+            print("the path is")
+            for node in path:
+                print(node.state)
             
             return node
         
@@ -147,6 +160,7 @@ def expand(node_queue, queueing_function, node, seen_states):
         new_node.g_n += 1
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
+        new_node.parent = node
 
         # ensure the new node has not been seen before
         if (new_node.state not in seen_states):
@@ -165,6 +179,7 @@ def expand(node_queue, queueing_function, node, seen_states):
         new_node.g_n += 1
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
+        new_node.parent = node
 
         # ensure the new node has not been seen before
         if (new_node.state not in seen_states):
@@ -183,6 +198,7 @@ def expand(node_queue, queueing_function, node, seen_states):
         new_node.g_n += 1
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
+        new_node.parent = node
 
         # ensure the new node has not been seen before
         if (new_node.state not in seen_states):
@@ -201,6 +217,7 @@ def expand(node_queue, queueing_function, node, seen_states):
         new_node.g_n += 1
         new_node.h_n = queueing_function(new_node.state)
         new_node.f_n = new_node.g_n + new_node.h_n
+        new_node.parent = node
 
         # ensure the new node has not been seen before
         if (new_node.state not in seen_states):
