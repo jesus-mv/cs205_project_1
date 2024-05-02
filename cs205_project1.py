@@ -18,7 +18,7 @@ class node:
         goal = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
         return (bool(self.state == goal))
 
-
+# todo: more robust input handling...
 def main():
     custom_puzzle = None
     queueing_function = None
@@ -63,6 +63,7 @@ def main():
         print("Invalid input!") 
         return
     
+    # begin search
     solution_node, max_queue_size, iterations = general_search(problem, queueing_function)
 
     if (solution_node is None):
@@ -88,7 +89,7 @@ def general_search(problem, queueing_function):
     seen_states.append(problem.state)
 
     while(1):
-        # if we run out of nodes to expand then search has failed
+        # if we run out of nodes to expand then the search has failed
         if (len(node_queue) == 0):
             return None
 
@@ -113,6 +114,7 @@ def general_search(problem, queueing_function):
     return
 
 # four operators, up, down, left, right (-1 row, +1 row, -1 col, +1 col)
+# todo: clean this up somehow...
 def expand(node_queue, queueing_function, node, seen_states):
     blank_row = None
     blank_col = None
