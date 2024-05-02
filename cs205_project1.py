@@ -1,18 +1,14 @@
 import copy
 
 class node:
-    state = None
-    g_n = None
-    h_n = None
-    f_n = None
-
-    parent = None
-
+    # a node consists of a state, parent node, and g(n), h(n), and f(n) values
     def __init__(self):
+        self.state = None
+        self.parent = None
+
         self.g_n = 0
         self.h_n = 0
         self.f_n = 0
-        self.parent = None
     
     def goal_test(self):
         if self.state is None:
@@ -32,8 +28,8 @@ def main():
     puzzle_mode = int(raw_input)
     
     if (puzzle_mode == 1):
-        puzzle = [[1, 6, 7], [5, 0, 3], [4, 8, 2]]
-        problem.state = puzzle
+       puzzle = [[1, 6, 7], [5, 0, 3], [4, 8, 2]]
+       problem.state = puzzle
     elif (puzzle_mode == 2):
         first_row = input("Enter the first row: ")
         second_row = input("Enter the second row: ")
@@ -67,7 +63,13 @@ def main():
         print("Invalid input!") 
         return
     
-    general_search(problem, queueing_function)
+    solution_node, max_queue_size, iterations = general_search(problem, queueing_function)
+
+    if (solution_node is None):
+        print("search failed!")
+        return
+    
+    print_stats(solution_node, max_queue_size, iterations)
 
     return
 
@@ -75,57 +77,36 @@ def main():
 #todo: get the max queue size and the number of nodes expanded 
 def general_search(problem, queueing_function):
     iteration = 0
-
-    # put 'problem' in a queue of nodes
+    max_node_queue_size = 0
     node_queue = []
+    seen_states = []
+
     problem.h_n = queueing_function(problem.state)
     problem.f_n = problem.g_n + problem.h_n
     node_queue.append(problem)
 
-    max_node_queue_size = 0
-
-    seen_states = []
     seen_states.append(problem.state)
 
     while(1):
-        print("Iteration", iteration, "of search")
+        # if we run out of nodes to expand then search has failed
         if (len(node_queue) == 0):
-            print("search failed!")
-            return False
+            return None
 
+        # remove the node at the front of the queue with the smallest f(n)
         node = node_queue.pop(0)
-        print("popped state with g(n) =", node.g_n, "and h(n) =", node.h_n)
-        print(node.state)
 
+        # is the node we removed our goal state? 
         if (node.goal_test()):
-            print("search success!")
-            print("the solution depth is", node.g_n)
-            print("the max queue size is", max_node_queue_size)
-            print("the number of nodes expanded is", iteration)
-
-            curr_node = node
-            path = []
-            while curr_node is not None:
-                path.append(curr_node)
-                curr_node = curr_node.parent
-            path.reverse()
-            print("the path is")
-            for node in path:
-                print(node.state)
-            
-            return node
+            return node, max_node_queue_size, iteration
         
+        # expand the node we removed
         expand(node_queue, queueing_function, node, seen_states)
 
         # in-place sort from: https://stackoverflow.com/questions/403421/how-do-i-sort-a-list-of-objects-based-on-an-attribute-of-the-objects
-        node_queue.sort(key=lambda x: x.f_n, reverse=False)
+        node_queue.sort(key=lambda x: (x.f_n, x.g_n), reverse=False)
 
-        #print("printing node queue")
-        #for node in node_queue:
-        #    print(node.state)
-
-        if (max_node_queue_size < len(node_queue)):
-            max_node_queue_size = len(node_queue)
+        # keep track of the max number of nodes in the queue (frontier nodes)
+        max_node_queue_size = max(max_node_queue_size, len(node_queue))
 
         iteration += 1
         
@@ -147,6 +128,8 @@ def expand(node_queue, queueing_function, node, seen_states):
                 blank_row = i
                 blank_col = j
                 break
+
+    
     
     # can the blank square move to the left?
     test_row_col = blank_col - 1
@@ -268,6 +251,27 @@ def manhattan_distance_heuristic(state):
                 h_n += abs(expected_col - col) + abs(expected_row - row)
 
     return h_n
+
+def print_stats(node, queue_size, iterations):
+    print("search successful!")
+    print()
+    print("The depth of the solution is:", node.g_n)
+    print("The maximum queue size was:", queue_size)
+    print("The number of nodes expanded was:", iterations)
+    print()
+
+    curr_node = node
+    path = []
+
+    while curr_node is not None:
+        path.append(curr_node)
+        curr_node = curr_node.parent
+    
+    path.reverse()
+
+    print("The path to the solution is:")
+    for node in path:
+        print(node.state)
 
 
 if __name__ == "__main__":
