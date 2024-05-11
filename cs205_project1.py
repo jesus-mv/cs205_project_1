@@ -1,4 +1,6 @@
 import copy
+import tracemalloc
+import time 
 
 class node:
     # a node consists of a state, parent node, and g(n), h(n), and f(n) values
@@ -18,7 +20,6 @@ class node:
         goal = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
         return (bool(self.state == goal))
 
-# todo: more robust input handling...
 def main():
     custom_puzzle = None
     queueing_function = None
@@ -45,6 +46,7 @@ def main():
             third_row[i] = int(third_row[i])
         
         custom_puzzle = [first_row, second_row, third_row]
+        print("You have entered a puzzle of:", custom_puzzle)
         problem.state = custom_puzzle
     else:
         print("Invalid input!")
@@ -64,7 +66,17 @@ def main():
         return
     
     # begin search
+    tracemalloc.start()
+    start_time = time.time()
+
     solution_node, max_queue_size, iterations = general_search(problem, queueing_function)
+
+    end_time = time.time()
+
+    total_time = end_time - start_time
+    current_mem, peak_mem = tracemalloc.get_traced_memory()
+
+    tracemalloc.stop()
 
     if (solution_node is None):
         print("search failed!")
@@ -72,10 +84,12 @@ def main():
     
     print_stats(solution_node, max_queue_size, iterations)
 
+    print("Total search time (s):", total_time)
+    print("Peak memory used (bytes):", peak_mem)
+
     return
 
 #using python list as queue, append to add to end of list, pop(0) to remove from beginning of list
-#todo: get the max queue size and the number of nodes expanded 
 def general_search(problem, queueing_function):
     iteration = 0
     max_node_queue_size = 0
@@ -114,7 +128,6 @@ def general_search(problem, queueing_function):
     return
 
 # four operators, up, down, left, right (-1 row, +1 row, -1 col, +1 col)
-# todo: clean this up somehow...
 def expand(node_queue, queueing_function, node, seen_states):
     blank_row = None
     blank_col = None
@@ -257,10 +270,6 @@ def manhattan_distance_heuristic(state):
 def print_stats(node, queue_size, iterations):
     print("search successful!")
     print()
-    print("The depth of the solution is:", node.g_n)
-    print("The maximum queue size was:", queue_size)
-    print("The number of nodes expanded was:", iterations)
-    print()
 
     curr_node = node
     path = []
@@ -268,13 +277,18 @@ def print_stats(node, queue_size, iterations):
     while curr_node is not None:
         path.append(curr_node)
         curr_node = curr_node.parent
-    
+
     path.reverse()
 
     print("The path to the solution is:")
     for node in path:
         print(node.state)
 
+    print()
+    print("The depth of the solution is:", node.g_n)
+    print("The maximum queue size was:", queue_size)
+    print("The number of nodes expanded was:", iterations)
+    print()
 
 if __name__ == "__main__":
     main()
